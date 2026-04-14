@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  dat-task-scraper:
+    build: .
+    # ---------------------------------------------------------------------------
+    # X11 display forwarding
+    #
+    # Linux:
+    #   Run `xhost +local:docker` once before `docker compose up`.
+    #   Export UID/GID so output files are owned by your user:
+    #     export UID=$(id -u) GID=$(id -g)
+    #
+    # macOS (XQuartz):
+    #   1. Install XQuartz and enable "Allow connections from network clients"
+    #      in XQuartz Preferences → Security.
+    #   2. Run: xhost +localhost
+    #   3. Set: export DISPLAY=host.docker.internal:0
+    #
+    # The DISPLAY variable is forwarded from the host environment.
+    # ---------------------------------------------------------------------------
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+    volumes:
+      # Bind-mount the project root so the app reads raw_task.html
+      # and writes cleaned_task_N.md to the host filesystem.
+      - .:/workspace
+      # X11 Unix socket — required on Linux; skip on macOS (use TCP display)
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    # Run as the current host user to ensure output files are host-user-owned.
+    # Falls back to UID/GID 1000 if the environment variables are not set.
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /workspace
+    # Host networking makes X11 forwarding simpler on Linux.
+    network_mode: host
